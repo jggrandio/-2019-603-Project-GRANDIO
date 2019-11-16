@@ -32,19 +32,3 @@ def main():
 
 if __name__=='__main__':
     main()
-
-'''if rank == 0:
-    for  i in range(10):
-        data = i
-        print('sending:',i)
-
-        req = comm.isend(data, dest=1, tag=11)
-        a=MPI.Request.Cancel(req)
-        print(a)
-elif rank == 1:
-    for  i in range(5):
-        req = comm.irecv(source=0, tag=11)
-        data = req.wait()
-        print(data)
-        time.sleep(0.5)
-'''

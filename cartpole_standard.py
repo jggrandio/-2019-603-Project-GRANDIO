@@ -20,7 +20,7 @@ FILE_NAME = "ann-weights.h5"
 
 if __name__ == "__main__":
     env = gym.make('CartPole-v1')
-    state_size = 4
+    state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
     agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, learning_rate=0.001, batch_size=128)
     scores = deque(maxlen=100)
