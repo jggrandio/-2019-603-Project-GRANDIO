@@ -5,6 +5,7 @@ from collections import deque
 import DQN_mpi as DQNagent
 import tensorflow as tf
 from collections import deque
+import time
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -12,22 +13,25 @@ size = comm.Get_size()
 
 simulators = size-1
 
-simulations = 800
+simulations = 500
 rep_interval = 25
-repetitions = int(simulations / (rep_interval*simulators))
+repetitions = int((simulations / (rep_interval*simulators))-1)
 rep_each = int(simulations / simulators)
 weights = None
+
+if rank == 0:
+    start_time = time.time()
 
 FILE_NAME = "ann-weights.h5"
 env = gym.make('CartPole-v1')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 if rank == 0:
-    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.93, learning_rate=0.001, batch_size=128)
+    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.95, learning_rate=0.001, batch_size=128)
 
 #first simulation to have training data
 if not rank == 0 :
-    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.93, batch_size=128)
+    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.95, batch_size=128)
     for e in range(rep_interval):
         state = env.reset()
         state = agent.format_state(state)
@@ -91,3 +95,7 @@ for i in range(repetitions):
     if not rank == 0:
         agent.model.set_weights(weights)
         weights = None
+
+if rank == 0:
+    elapsed_time = time.time() - start_time
+    print('time to run:', elapsed_time )

@@ -3,8 +3,9 @@ import gym
 import numpy as np
 from collections import deque
 import DQNagent
+import time
 
-EPISODES = 5000
+EPISODES = 500
 
 GANMA = 0.99    # discount rate
 EPSILON = 1.0  # exploration rate
@@ -19,6 +20,7 @@ TRAIN = 1;
 FILE_NAME = "ann-weights.h5"
 
 if __name__ == "__main__":
+    start_time = time.time()
     env = gym.make('CartPole-v1')
     state_size = env.observation_space.shape[0]
     action_size = env.action_space.n
@@ -47,13 +49,12 @@ if __name__ == "__main__":
       scores.append(score)
       mean_score = np.mean (scores)
       #print episode results
+      if e%25 == 0:
+          print("episode: {}/{}, score: {}, e: {:.2}, mean_score: {}"
+                .format(e, EPISODES, score, agent.epsilon,mean_score))
 
-      print("episode: {}/{}, score: {}, e: {:.2}, mean_score: {}"
-            .format(e, EPISODES, score, agent.epsilon,mean_score))
-
-      if mean_score >=400 and e>=100:
-          print('Solved after {} episodes'.format(e))
-          break
       agent.reduce_random()
       agent.replay()
       agent.soft_update_target_network()
+    elapsed_time = time.time() - start_time
+    print('time to run:', elapsed_time )

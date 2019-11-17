@@ -4,13 +4,13 @@ import numpy as np
 from collections import deque
 import DQNagent
 import tensorflow as tf
-import timeit
+import time
 
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-EPISODES = 800
+EPISODES = 500
 
 GANMA = 0.99    # discount rate
 EPSILON = 1.0  # exploration rate
@@ -23,7 +23,8 @@ LEARNING_RATE = 0.001
 #TRAIN = 1 trains to a file. TRAIN = 0 plays with the coefficients of the file.
 TRAIN = 1;
 FILE_NAME = "ann-weights.h5"
-
+if rank == 1:
+    start_time = time.time()
 env = gym.make('CartPole-v1')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
@@ -74,3 +75,7 @@ elif rank == 1:
             comm.send(agent.memory, dest=0, tag=11)
             weights = comm.recv(source=0, tag=12)
             agent.model.set_weights(weights)
+            agent.memory=deque()
+    elapsed_time = time.time() - start_time
+    print('time to run:', elapsed_time )
+    comm.send(agent.memory, dest=0, tag=11)
