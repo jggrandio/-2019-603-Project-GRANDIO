@@ -2,7 +2,7 @@ from mpi4py import MPI
 import gym
 import numpy as np
 from collections import deque
-import DQNagent
+import DQN_mpi as DQNagent
 import tensorflow as tf
 from collections import deque
 
@@ -22,10 +22,12 @@ FILE_NAME = "ann-weights.h5"
 env = gym.make('CartPole-v1')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.93, learning_rate=0.001, batch_size=128)
+if rank == 0:
+    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.93, learning_rate=0.001, batch_size=128)
 
 #first simulation to have training data
 if not rank == 0 :
+    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.93, batch_size=128)
     for e in range(rep_interval):
         state = env.reset()
         state = agent.format_state(state)
@@ -56,7 +58,6 @@ for i in range(repetitions):
     if rank == 0:
         for d in data[1:]:
             agent.memory += d
-            print('len d:',len(d))
         for e in range(rep_interval*simulators):
             agent.replay()
             agent.soft_update_target_network()
@@ -81,7 +82,7 @@ for i in range(repetitions):
             scores.append(score)
             mean_score = np.mean (scores)
             agent.reduce_random()
-            
+
         print("episode: {}/{}, score: {}, e: {:.2}, mean_score: {}"
             .format(e+(i+1)*rep_interval, rep_each, score, agent.epsilon,mean_score))
     data = comm.gather(agent.memory, root=0)
