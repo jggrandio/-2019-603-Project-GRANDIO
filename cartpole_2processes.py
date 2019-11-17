@@ -10,7 +10,7 @@ import timeit
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-EPISODES = 5000
+EPISODES = 800
 
 GANMA = 0.99    # discount rate
 EPSILON = 1.0  # exploration rate
@@ -41,6 +41,7 @@ if rank == 0:
             print('neuron trained')
             data = comm.recv(source=1, tag=11)
             agent.memory += data
+            print(len(agent.memory))
             w_model=agent.model.get_weights()
             comm.send(w_model, dest=1, tag=12)
 
