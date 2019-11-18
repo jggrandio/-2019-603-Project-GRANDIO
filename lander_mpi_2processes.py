@@ -4,13 +4,13 @@ import numpy as np
 from collections import deque
 import DQNagent
 import tensorflow as tf
-import timeit
+import time
 
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-EPISODES = 5000
+EPISODES = 1000
 
 GANMA = 0.99    # discount rate
 EPSILON = 1.0  # exploration rate
@@ -23,33 +23,32 @@ LEARNING_RATE = 0.001
 #TRAIN = 1 trains to a file. TRAIN = 0 plays with the coefficients of the file.
 TRAIN = 1;
 FILE_NAME = "ann-weights.h5"
-
+if rank == 1:
+    start_time = time.time()
 env = gym.make('LunarLander-v2')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, learning_rate=0.001, batch_size=128)
+agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.995, learning_rate=0.001, batch_size=128)
 
 if rank == 0:
     data = comm.recv(source=1, tag=11)
     agent.memory += data
     w_model=agent.model.get_weights()
     comm.send(w_model, dest=1, tag=12)
-    for e in range(5*EPISODES):
+    for e in range(EPISODES):
         agent.replay()
         agent.soft_update_target_network()
-        if e % 125 == 0:
+        if e % 25 == 0:
             print('neuron trained')
             data = comm.recv(source=1, tag=11)
             agent.memory += data
+            print(len(agent.memory))
             w_model=agent.model.get_weights()
             comm.send(w_model, dest=1, tag=12)
 
 
 
 elif rank == 1:
-    env = gym.make('LunarLander-v2')
-    state_size = 8
-    action_size = env.action_space.n
     scores = deque(maxlen=100)
     mean_score = 0
     for e in range(EPISODES):
@@ -76,3 +75,7 @@ elif rank == 1:
             comm.send(agent.memory, dest=0, tag=11)
             weights = comm.recv(source=0, tag=12)
             agent.model.set_weights(weights)
+            agent.memory=deque()
+    elapsed_time = time.time() - start_time
+    print('time to run:', elapsed_time )
+    comm.send(agent.memory, dest=0, tag=11)

@@ -15,7 +15,7 @@ simulators = size-1
 
 simulations = 500
 rep_interval = 25
-repetitions = int((simulations / (rep_interval*simulators))-1)
+repetitions = int(simulations / (rep_interval*simulators))
 rep_each = int(simulations / simulators)
 weights = None
 

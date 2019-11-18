@@ -43,7 +43,6 @@ if __name__ == "__main__":
         new_state, reward, done, _ = env.step(action)
         new_state = agent.format_state(new_state)
         agent.remember(state, action, reward, new_state, done)
-        agent.training(state, action, reward, new_state, done)
         state= new_state
         score += reward
       scores.append(score)
