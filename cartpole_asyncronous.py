@@ -13,7 +13,7 @@ size = comm.Get_size()
 
 simulators = size-1
 
-simulations = 5000
+simulations = 500
 rep_interval = 25
 repetitions = int(simulations / (rep_interval*simulators))
 rep_each = int(simulations / simulators)
@@ -23,15 +23,15 @@ if rank == 0:
     start_time = time.time()
 
 FILE_NAME = "ann-weights.h5"
-env = gym.make('LunarLander-v2')
+env = gym.make('CartPole-v1')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 if rank == 0:
-    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, learning_rate=0.001, batch_size=128)
+    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.95, learning_rate=0.001, batch_size=128)
 
 #first simulation to have training data
 if not rank == 0 :
-    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, batch_size=128)
+    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.95, batch_size=128)
     for e in range(rep_interval):
         state = env.reset()
         state = agent.format_state(state)
@@ -56,20 +56,42 @@ if not rank == 0 :
     print("episode: {}/{}, score: {}, e: {:.2}, mean_score: {}"
         .format(e, rep_each, score, agent.epsilon,mean_score))
 
+#First gather and save the data to start the iterative process
 data = comm.gather(agent.memory, root=0)
+if rank == 0:
+    w_model=np.asarray(agent.model.get_weights(), dtype = np.float32)
+    for d in data[1:]:
+        agent.memory += d
+    data = [[]]*(size-1)
+    for i in range(1,size):
+        data[i-1] = comm.irecv(source=i, tag=12)
+        comm.isend(w_model, dest=i, tag=11)
+else:
+    network = comm.irecv(source=0, tag=11)
+            
 
 for i in range(repetitions):
     if rank == 0:
-        for d in data[1:]:
-            agent.memory += d
+        #load weights to send
+        w_model=agent.model.get_weights()
+        for i in range(1,size):
+            #chek if received new data
+            flag, d = data[i-1].test()
+            if not d == None:
+                #if not received we cancel to ask again for data
+                #data[i-1].Cancel()
+            #else:
+                
+                data[i-1] = comm.irecv(source=i, tag=12)
+                comm.isend(w_model, dest=i, tag=11)
+                agent.memory += d
+            
         for e in range(rep_interval*simulators):
             agent.replay()
             agent.soft_update_target_network()
-
-            #load weights to send to the others processes
-            weights=agent.model.get_weights()
         print('neuron trained')
     else:
+        time.sleep(5)
         agent.memory=deque()
         for e in range(rep_interval):
             state = env.reset()
@@ -89,12 +111,19 @@ for i in range(repetitions):
 
         print("episode: {}/{}, score: {}, e: {:.2}, mean_score: {}"
             .format(e+(i+1)*rep_interval, rep_each, score, agent.epsilon,mean_score))
-    data = comm.gather(agent.memory, root=0)
-    weights = comm.bcast(weights, root=0)
+        #flag, weights = network.test()
+        weights = network.wait()
+        print(weights)
+        if not weights == None:
+            ##network.Cancel()
+        ##else:
+            print(flag)
+            comm.isend(agent.memory, dest=0, tag=12)
+            agent.memory=deque()
+            agent.model.set_weights(weights)
+            network = comm.irecv(source=0, tag=11)
 
-    if not rank == 0:
-        agent.model.set_weights(weights)
-        weights = None
+
 
 if rank == 0:
     elapsed_time = time.time() - start_time
