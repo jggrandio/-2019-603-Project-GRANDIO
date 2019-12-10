@@ -16,7 +16,7 @@ class agent:
         self.state_size=state_size
         self.action_size=action_size
         self.batch_size=batch_size
-        self.memory=deque(maxlen=50000)
+        self.memory=deque(maxlen=100000)
         self.tau=tau
         self.model=self.build_network()
         self.target_model=self.build_network()
@@ -58,7 +58,7 @@ class agent:
             target_batch.append(target_vec[0])
             state_batch.append(state[0])
         # Instead of train in the for, I give all targets as array and give the batch size
-        self.model.fit(np.array(state_batch), np.array(target_batch),batch_size=len(state_batch), epochs=5, verbose=0)
+        self.model.fit(np.array(state_batch), np.array(target_batch),batch_size=len(state_batch), epochs=1, verbose=0)
 
 
     def reduce_random(self):

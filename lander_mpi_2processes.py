@@ -28,7 +28,7 @@ if rank == 1:
 env = gym.make('LunarLander-v2')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.995, learning_rate=0.001, batch_size=128)
+agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.995, learning_rate=0.001, batch_size=32)
 
 if rank == 0:
     data = comm.recv(source=1, tag=11)
