@@ -27,11 +27,11 @@ env = gym.make('LunarLander-v2')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 if rank == 0:
-    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.985, learning_rate=0.001, batch_size=128)
+    agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, learning_rate=0.001, batch_size=128)
 
 #first simulation to have training data
 if not rank == 0 :
-    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.985, batch_size=256)
+    agent = DQNagent.simulator(state_size,action_size , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.992, batch_size=256)
     for e in range(rep_interval):
         state = env.reset()
         state = agent.format_state(state)
