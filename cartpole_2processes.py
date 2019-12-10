@@ -43,6 +43,7 @@ if rank == 0:
             data = comm.recv(source=1, tag=11)
             agent.memory += data
             print(len(agent.memory))
+            
             w_model=agent.model.get_weights()
             comm.send(w_model, dest=1, tag=12)
 
@@ -51,7 +52,7 @@ if rank == 0:
 elif rank == 1:
     scores = deque(maxlen=100)
     mean_score = 0
-    for e in range(EPISODES):
+    for e in range(EPISODES+1):
         state = env.reset()
         state = agent.format_state(state)
         done = False
