@@ -16,7 +16,7 @@ class agent:
         self.state_size=state_size
         self.action_size=action_size
         self.batch_size=batch_size
-        self.memory=deque(maxlen=50000)
+        self.memory=deque(maxlen=5000)
         self.tau=tau
         self.model=self.build_network()
         self.target_model=self.build_network()
@@ -50,9 +50,9 @@ class agent:
             if done:
                 target = reward
             else:
-                action_max=np.argmax(self.model.predict(next_state))
+                action_max=np.amax(self.model.predict(next_state))
 
-                target=reward + self.gamma * self.target_model.predict(next_state)[0][action_max]
+                target=reward + self.gamma * action_max
             target_vec=self.model.predict(state)
             target_vec[0][action] = target
             target_batch.append(target_vec[0])

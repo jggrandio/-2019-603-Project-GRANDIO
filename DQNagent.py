@@ -7,13 +7,12 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 
 class agent:
-    def __init__(self,state_size,action_size, gamma=1, epsilon = 1.0, epsilon_min=0.01,epsilon_decay=0.995, learning_rate=0.001, batch_size=64, tau=0.1):
+    def __init__(self,state_size,action_size, gamma=1, epsilon = 1.0, epsilon_min=0.01,epsilon_decay=0.995, batch_size=64, tau=0.1):
         #Define the parameter of the agent
         self.gamma=gamma
         self.epsilon=epsilon
         self.epsilon_min=epsilon_min
         self.epsilon_decay=epsilon_decay
-        self.learning_rate=learning_rate
         self.state_size=state_size
         self.action_size=action_size
         self.batch_size=batch_size
@@ -31,7 +30,7 @@ class agent:
         model.add(Dense(64, input_dim = self.state_size, activation='relu'))
         model.add(Dense(64, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
-        model.compile(loss='mse', optimizer=Adam(self.learning_rate), metrics=['mae'])
+        model.compile(loss='mse', optimizer=Adam(), metrics=['mae'])
         return model
 
     def remember(self,state, action, reward, next_state, done):
@@ -51,9 +50,9 @@ class agent:
             if done:
                 target = reward
             else:
-                action_max=np.argmax(self.model.predict(next_state))
+                action_max=np.amax(self.model.predict(next_state))
 
-                target=reward + self.gamma * self.target_model.predict(next_state)[0][action_max]
+                target=reward + self.gamma * action_max
             target_vec=self.model.predict(state)
             target_vec[0][action] = target
             target_batch.append(target_vec[0])

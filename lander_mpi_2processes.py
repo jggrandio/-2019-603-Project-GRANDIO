@@ -10,7 +10,7 @@ import time
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-EPISODES = 1000
+EPISODES = 2000
 
 GANMA = 0.99    # discount rate
 EPSILON = 1.0  # exploration rate
@@ -28,7 +28,7 @@ if rank == 1:
 env = gym.make('LunarLander-v2')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = DQNagent.agent(state_size,action_size,gamma=0.999 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.995, learning_rate=0.001, batch_size=128)
+agent = DQNagent.agent(state_size,action_size,gamma=0.95 , epsilon = 1.0, epsilon_min=0.001,epsilon_decay=0.997, batch_size=256)
 
 if rank == 0:
     data = comm.recv(source=1, tag=11)
@@ -36,6 +36,8 @@ if rank == 0:
     w_model=agent.model.get_weights()
     comm.send(w_model, dest=1, tag=12)
     for e in range(EPISODES):
+        agent.replay()
+        agent.replay()
         agent.replay()
         agent.soft_update_target_network()
         if e % 25 == 0:
@@ -48,7 +50,7 @@ if rank == 0:
 
 
 elif rank == 1:
-    scores = deque()
+    scores = deque(maxlen=100)
     mean_score = 0
     for e in range(EPISODES+1):
         state = env.reset()
